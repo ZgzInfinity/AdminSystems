@@ -1,0 +1,105 @@
+------------------------------------------
+--- Autor: Rubén Rodríguez Esteban -------
+--- NIP: 737215 --------------------------
+------------------------------------------
+
+PARTE 1
+
+Para realizar esta práctica, se han aprovechado las dos máquinas virtuales empleadas en la práctica anterior.
+Dichas máquinas virtuales han sido clonadas para obtener otras dos máquinas idénticas a las anteriores, 
+teniendo así otras dos máquinas en perfecto estado y funcionamiento.
+
+Una vez efectuada la clonación de las máquinas, se ha procedido a instalar en sendas máquinas el paquete lvm2
+para poder trabajar con volúmenes lógicos, empleados posteriormente. Dicha instalación se he realizado tecleando
+en terminal el comando "sudo apt install lvm2". Una vez concluída la instalación, se ha escrito el comando 
+"systemctl list -units" para verificar con éxito, que el servicio lvm2 está corriendo correctamente.
+
+A continuación se ha procedido añadir los discos virtuales que van a usar las máquinas. Para ello, previamente
+se han apagado las máquinas virtuales y posteriormente se ha accedido a la sección de "almacenamiento" de la 
+configuración de cada máquina y se han añadido los dos discos virtuales a cada una, ambos discos dinámicos y con
+una capacidad de 32 MB.
+
+Seguídamente, se ha procedido a  efectuar el arranque de las máquinas virtuales. Una vez iniciadas,se ha iniciado 
+una terminal en cada una de ellas y se ha escrito el comando "sudo fdisk -l" para comprobar que las máquinas 
+reconocen los discos dinámicos recién añadidos. Dicha verficación ha sido un éxito, no obstante, también se ha 
+ejecutado en terminal el comando "sudo parted -l" para recomprobar de nuevo y para identificar cada uno de los discos.
+
+Posteriormente, se ha tecleado el comando "sudo parted <nombre_del_disco>" para poder acceder a cada uno y gestionar
+la creación de las particiones. Para poder llevar a cabo la creación de tales particiones se han seguido los pasos
+siguientes:
+
+   - "Sudo mklabel gpt" para crear la partición con formato GUID.
+   - "mkpart" para crear las particiones correspondientes en cada disco. Cada disco tiene dos particiones con 
+      formato de sistema de ficheros ext3 y ext4 respectivamente, con capacidad de 16 MB cada una de ellas.
+   - "print" para poder ver la tabla de las particiones resultantes, así como las características de cada 
+      partición.
+
+Una vez establecidas las particiones, se ha procedido a crear el sistema de ficheros en terminal con el comando
+"sudo mkfs -t <tipo_sistema_ficheros> <partición>". De esta forma los discos ya están listos para montarse en la
+máquina. Para ello, han sido añadidos al fichero "fstab" localizado en el directorio de sistema "etc" con la 
+estructura "<partición> <directorio de montaje> <sistema_ficheros> auto 0 0". La opción auto ha sido escrita para 
+ambas particiones, de esta forma cuando el sistema se arranca, las particiones se montan adecuadamente. Para poder
+verifcar el correcto montado se han reiniciado la máquinas virtuales, y una vez reiniciadas, se ha escrito en la
+terminal el comando "mount" y efectivamente las particiones han aparecido montadas.
+
+
+
+PARTE 2
+
+En esta segunda parte de la práctica se ha diseñado un script de nombre "practica5_parte2.sh" que comprueba
+remotamente mediante conexión ssh la situación de uso y organización de espacio de disco, volúmenes lógicos,
+sistemas de ficheros y directorios de montaje. Este script toma como parámetro una dirección IP que representa
+la máquina virtual con la que debe comunicarse el host mediante ssh. Para poder hacer este apartado se ha 
+reutilizado el mecanismo de conexión ssh diseñado en la práctica anterior. Por motivos de redudancia se ha optado 
+por describir su funcionamiento en el código del propio script, y por esa razón, no se ha considerado necesario
+hacer más énfasis en este aspecto.
+
+
+
+PARTE 3
+
+En esta última parte se ha procedido a añadir un nuevo disco duro con formato Linux a las máquinas virtuales 
+anteriores. Dicho disco duro tiene una capacidad idéntica a las anteriores. Para dicho disco se ha creado una 
+única partición que extiendetoda su capacidad utilizando el mismo procedimiento que se ha explicado en apartados 
+anteriores.
+
+En este apartado se debe implementar un script que dado un volumen lógico como parámetro, concretamente el primero,
+se debe extender con una serie de particiones concretas, pasadas en el resto de parámetros del script. Previamente
+se ha procedido a crear un grupo volumen llamado como "vg_p5" introduciendo en la terminal de la máquina virtual
+el comando "sudo vgcreate vg_p5 <particiones>". Una vez creado el grupo y diseñado el script se ha ejecutado para 
+poder extender el grupo con las particiones. Una vez finalizado el script se ha escrito el comando "sudo vgs" para
+listar con éxito que en el grupo creado anteriormente aparecen los grupos volúmenes creados, y verificando
+al mismo tiempo que dichos grupos tienen los volúmenes lógicos correctos con el comando "sudo lvs"
+
+Posteriormente se ha procedido a crear el último script, que debe crear o añadir volúmenes lógicos. Si el volumen 
+lógico ya existía, se extiende el grupo con el volumen en cuestión, pero en caso contrario, debe crearse y añadirse
+al fichero "fstab" localizado en el directorio de sistema "etc" y configurarlos para que se monten automáticamente
+durante el arranque del sistema, para lo que ha sido necesario colocar en el fichero "fstab" la opción auto, tal y
+como se ha hecho en apartados anterires. Seguidamente, se ha probado el script implementado cuya explicación está
+junto con el código. Así las cosas, se ha comprobado que los volúmenes se crean bien si no existen y que los
+volúmenes se añaden o redimensionan correctamente con los comandos descritos anteriormente en caso de su existencia.
+
+Una vez verificado todo esto se ha comprobado que efectivamente, los volúmenes lógicos añadidos anteriormente, se 
+montan de manera automática al arrancar el sistema. Para ello, se han reiniciado las máquinas virtuales, y una vez
+ya reiniciadas, se ha escrito en terminal el comando "mount" para ver que unidades se hallan montadas.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
