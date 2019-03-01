@@ -1,0 +1,99 @@
+
+---------------------------------------------
+-------- Memoria de la práctica 4 -----------
+------- Administración de sistemas ----------
+------ Rubén Rodríguez Esteban 737215 -------
+---------------------------------------------
+
+1. CONFIGURACIÓN DE RED Y MÁQUINAS VIRTUALES 
+
+En este documento se va a explicar detalladamente cualés han sido los pasos
+a seguir para poder llevar a cabo la conexión entre las máquinas virtuales
+y el host, así como el proceso de instalación 
+de las claves
+
+Para poder realizar esta práctica se utilizó la máquina virtual "as_2017-18",
+renombrada como "debian_as1" con el objetivo de ahorrar espacio.
+
+El primer paso fue crear la red virtual entre la máquina virtual y el host.
+Para ello, se ha definido una red en Virtual Box del tipo Host-Only-Network 
+llamada vboxnet0 cuya dirección IPv4 es 192.168.56.1, la máscara de subred es
+255.255.255.0 y el protocolo DHCP desactivado.
+
+Una vez establecida la red virtual, se llevó a cabo la configuración de los adaptadores de red 
+1 y 2 para la máquina virtual, conectándolos a NAT y a la red anfitrión definida en el paso
+anterior "vboxnet0". 
+
+Una vez configurados los adaptadores se ha comprobado que ambos tienen direcciones MAC distintas,
+dicha verificación ha resultado ser positiva y no ha hecho falta generar nuevas direcciones aleatorias.
+
+A continuación, se ha procedido a instalar el paquete sudo, el cuál ya estaba instalado de prácicas
+anteriores. No obstante, de forma previa se puede comprobar su existencia con el comando 
+"apt list --installed sudo". Si dicho paquete no existe, debe instalarse en la máquina ejecutando en 
+terminal los siguientes comandos:
+
+  - su root.
+  - Introducir la contraseña de root, si es que está configurada.
+  - apt install sudo
+
+Posteriormente, debe configurarse nuestro usuario para que pueda ejecutar comandos como root. Para ello,
+se debe acceder al fichero sudoers localizado en el directorio etc del sistema, y observar el grupo al que 
+se debe pertenecer para ser usuario root. Una vez obtenido, mediante el comando "adduser as <grupo>" nuestro
+usuario ya está listo para ejecutar comandos como root. A continuación se ha configurado sudo para no acceder
+con contraseña. Para ello, en el fichero sudoers se ha escrito "%sudo  ALL=(ALL)  NOPASSWD:ALL"
+
+Una vez configurado sudo, se ha asignado a la máquina virtual "debian_as1" una dirección IP, 192.168.56.2 y se 
+han configurado para que al arrancar se conecte a los dos interfaces que tienen conectados.
+
+Una vez hecho todo, se ha verificdo la correcta comunicación entre el host y la máquina mediante el comando ping.
+Tales pruebas han consistido en los siguientes comandos escritos en terminal
+
+  - ping 192.168.56.2 
+  - ping 192.168.56.1
+
+El primer comando es ejecutado en la terminal del host para verificar que el host se comunica bien con la 
+máquina virtual, y el segundo se ejecuta en la terminal de la máquina virtual para comprobar la comunicación en
+el sentido inverso. Ambas pruebas han ofrecido resultados correctos.
+
+Seguidamente, se ha instalado en la maquina virtual el paquete openssh-server por medio del comando 
+"sudo apt install openssh-server". Una vez instalado se ha configurado ssh para que el usuario root no pueda 
+conectarse, accediendo al archivo /etc/ssh/sshd_config la y moficando esta línea "PermitRootLogin no".
+
+Para concluir el episodio de creación de red y configuración de la máqina se prueba que el servidor ssh funciona
+correctamente en la máquina haciendo "ssh as@192.168.56.2" en la terminal del host y observando que la máquina 
+responde correctamente.
+
+
+2. ESTABLECIMIENTO DE CLAVES 
+
+Se debe crear en el directorio /home/.ssh un fichero llamado "id_as_ed25519.pub" donde figura la clave pública. Posteriormente,
+ejecutar en la terminal del host el comando "ssh-copy-id id_as_ed25519.pub as@192.168.56.2" para generar
+un fichero en el directorio /home/.ssh de la máquina local llamado "authorized keys" donde figura la clave pública.
+Así las cosas, nuestro host ya está listo poder establecer conexión vía ssh con la máquina virtual "debian_as1"
+
+Una vez terminada toda la configuración, se ha hecho una clonación completa de la máquina virtual "debian_as1" nombrándola 
+como "debian_as2" guardando así toda la configuración de la otra máquina. 
+
+Sin embargo, se debe modificar la dirección IP para que sea distinta a la de la otra máquina, 192.168.56.3 al igual que la dirección MAC
+
+Para concluir se muestra un esquema sencillo y breve de como ha quedado la red virtual configurada anteriormente especificando en ella el
+host con ambas máquinas virtuales "debian_as1" y "debian_as2" y las correspondientes direcciones MAC e IP de cada uno de ellos.
+
+
+
+					 |--------------------------- DEBIAN_AS1
+					 |			     192.168.56.2
+					 |			   08:00:27:AF:94:15
+		HOST --------------------|
+	     192.168.56.1		 |
+	  0a:00:27:00:00:00	 	 |
+					 |--------------------------- DEBIAN_AS2
+								     192.168.56.3
+								   08:00:27:95:0E:A0
+
+
+
+
+
+
+
