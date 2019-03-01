@@ -1,0 +1,237 @@
+/* ----------------------------------------- */
+/* ---- Alumno: Rubén Rodríguez Esteban ---- */
+/* ---- NIP: 737215 ------------------------ */
+/* ----------------------------------------- */
+
+1. Preparación del entorno de trabajo y clonación de las máquinas
+
+Para llevar a cabo el trabajo de la asignatura, en primer lugar se procedio a descargar 
+del servidor central la máquina virtual a partir de la cuál se han clonado las restantes
+para poder realizar el trabajo.
+
+Una vez que la máquina ha sido descargada se ha importado en VirtualBox.Posteriormente, 
+se ha procedido a efectuar una serie de cambios en la configuración de la máquina recíen 
+importada. Para ello, se ha accedido al administrador de medios virtuales y se ha cambiado
+el tipo de disco de la máquina, convirtiéndolo de normal a multiconexión. Una vez llevados 
+a cabo estas operaciones se ha verificado que la máquina importada funciona bien. Esta 
+máquina se ha renombrado como "Debian1".
+
+Posteriormente se ha realizado una clonación completa de "Debian1" para crear las otras cinco
+máquinas restantes, denominadas como "Debian2", "Debian3", "Debian4", "Debian5" y "Debian6". La
+máquina "Debian1" tiene un único adaptador, concretamente el que viene por defecto, de tipo NAT,
+mientras que el resto de la máquinas no tiene ninguno. Así las cosas, ya están disponibles para
+configurar todas las máquinas virtuales que se van a usar en la realziación del trabajo.
+
+
+
+2. Configuración de la red interna 2
+
+En primer lugar se han procedido a configurar la red interna 2, formada por las máquinas "Debian3" 
+y "Debian4". Dichas máquinas virtuales adquieren la dirección IP de forma automática, es decir, por
+medio del protocolo DHCP a través de "Debian1" para lo que ha sido necesario añadir a las máquinas
+virtuales "Debian1", "Debian3" y "Debian4" un adaptador de red interna, conectada a una red interna 
+denominada "redInterna2", que tiene como IP 192.168.56.0.
+ 
+Para ello, se ha configurado en la máquina "Debian1" un servidor DHCP que asigna direcciones IP de 
+forma dinámica a la red interna 2. Para poder usar el servidor se ha descargado un paquete
+llamado "isc-dhcp-server" por medio del comando "apt install isc-dhcp-server". Posteriormente se ha
+editado el fichero "/etc/dhcp/dhcpd.conf" con la siguiente información:
+
+subnet 192.168.56.0 netmask 255.255.255.0 {
+   range 192.168.56.101 192.168.56.110;
+   option broadcast-address 192.168.56.255;
+   option subnet-mask 255.255.255.0;
+   option routers 192.168.56.1;
+   option domain-name-servers 8.8.8.8 , 8.8.4.4;
+   option domain-name "myserver";
+}
+
+Para lograr que el servidor DHCP funcione se ha tenido que editar el fichero "/etc/default/dhcp" donde
+se ha seleccionado la interfaz enp0s8, correspondiente a la red interna 2, para indicar a qué interfaz
+le debe asignar las direcciones IP. Además también ha tenido que ser editado el fichero de configuración
+llamado "/etc/network/interfaces" para configurar la interfaz a la que está conectada la subred 2, con 
+la dirección IP estática 192.168.32.1. Finalmente se han reiniado las máquinas virtuales para aceptar 
+los nuevos cambios y el servidor DHCP ha entrado en funcionamiento. Para comprobar que las direcciones IP
+se asignaban bien que las máquinas se conectaban se han realizado pings entre las máquinas, y todos ellos
+han resultado ser un éxito.
+
+
+
+3. Configuración de la red interna 1
+
+Una vez tenidas las máquinas "Debian1", "Debian3" y "Debian4" bien interconectdas, se ha procedido a efectuar
+la configuración de la red interna 1, dónde se encuentra la máquina virtual "Debian2". Para ello, se ha añadido
+a "Debian1" y "Debian2" un adaptador de red interna, conectado a la red interna "redInterna1", que tiene 
+como IP 192.168.32.0. Además han tenido que editarse los ficheros "/etc/network/interfaces" tanto de la máquina 
+virtual "Debian1", donde se ha configurado una interfaz nueva con la dirección IP fija 192.168.32.1, como en la
+máquina "Debian2" donde se ha configurado la interfaz con la IP estática 192.168.32.100.
+
+
+
+4. Configuración de la red interna 3
+
+A continuación se procedió a configurar las máquinas virtuales "Debian5" y "Debian6". Para ello, se ha añadido a 
+la máquina "Debian6" dos interfaces para conectarse con la red interna 2 por medio de la IP estática 192.168.56.100
+y con la red interna 3 a través de la IP estática 192.168.64.103. La máquina virtual "Debian5" se ha configurado
+con la IP estática 192.168.64.102. Dichas modificaciones han sido realizadas en los ficheros "/etc/network/interfaces"
+de las máquinas.
+
+
+
+5. Construcción de las rutas de enrutamiento.
+
+Seguídamente, se han procedido a configurar las correspondientes rutas de encaminamiento de las diferentes máquinas
+para lograr que todas ellas se comunican entre sí. Para ello, se han realizado los siguientes pasos:
+
+En "Debian2" se ha creado una ruta por defecto para mandar los paquetes a cualquiera de las subredes internas. Dicha
+ruta se ha creado por medio del siguiente comando "up route add default gw 192.168.32.1. De esta forma "Debian2" para
+comunicarse con cualquier subred manda los paquetes a su ruta por defecto que tiene como puerta de enlace la ip de la
+máquina "Debian1" en esa subred 192.168.32.1. Posteriormente se ha añadido en la máquina "Debian5" una ruta estática 
+para poder comunicarse con el resto de máquinas. Dicha ruta estática por defecto ha sido añadida por medio del 
+comando "up route add default gw 192.168.64.103". Así las cosas, "Debian5" para comunicarse con las otras subredes 
+manda los paquetes a la puerta de enlace 192.168.64.103, la dirección IP de "Debian6" en esa subred.
+
+Para que la conexión a la red interna 3 sea accesible desde cualquier punto se ha añadido una ruta estática por medio
+del comando "up route add 192.168.64.0 gw 192.168.56.100. De esa manera, la máquina "Debian1" es capaz de comunicarse
+con las máquina "Debian5" a través de la IP estática de "Debian6" 192.168.56.100. Adicionalmente se añadio una ruta 
+que posteriormente "Debian5" y "Debian6" puedan tener internet a través de "Debian1" por medio del comando "up route
+default gw 192.168.56.1. Adicionalmente para permitir el reenvío de paquetes entre las diferentes subredes se ha editado
+el fichero "/etc/systemctl.conf" y se ha descomentado la línea "net.ip4.ip_forward = 1" en la máquina "Debian1" y en la 
+máquina "Debian6" para que puedan reenviar paquetes a través de ellas a otras subredes.
+
+Una vez efectuadas la secuencia de operaciones anteriores, se han efectuado a realizar pings entre las diferentes 
+máquinas, y todos ellos han sido un éxito.
+
+
+
+6. Establecimiento de la conexión a internet
+
+En este punto la única máquina de la red que tiene conexión a internet es "Debian1", dado que tiene un adaptador de red
+de tipo NAT, el resto de las máquinas virtuales tendrán conexión a internet a través de la máquina "Debian1". Para poder
+configurar dicho aspecto se ha instalado en "Debian1" el paquete "iptables-persistent" para lograr que las reglas de 
+iptables permanezcan guardadas depués del reinicio. Después de haber instalado el paquete, se han usado los siguientes 
+comandos:
+
+iptables -t nat -A POSTROUTING -s 192.168.64.0/24 -o enp0s3 -j SNAT --to 10.0.2.15
+iptables -t nat -A POSTROUTING -s 192.168.56.0/24 -o enp0s3 -j SNAT --to 10.0.2.15
+iptables -t nat -A POSTROUTING -s 192.168.32.0/24 -o enp0s3 -j SNAT --to 10.0.2.15
+
+Una vez añadido estas reglas, se ha ejecutado el comando "iptables-save > /etc/iptables/rules.v4" para que se actualicen
+los cambios. Seguídamente se ha reiniado "Debian1" para verificar que los cambios se han hecho correctamente, y después,
+desde cada máquina se han ejecutado los comandos "ping 8.8.8.8" y "ping 8.8.4.4" para comprobar que cada una de ellas ya
+cuenta con conexión a internet.
+
+
+
+7. Configuración del servidor apache 
+
+A continuación se ha procedido a instalar y dar soporte al servidor de apache en la máquina virtual "Debian2". Como paso 
+prevío se ha instalado apache en "Debian2" con el comando "apt install apache2". Una vez instalado, en la máquina "Debian1"
+se ha procedido a dar soporte al servidor apache. Para ello se han usado los comandos siguientes:
+
+iptables -A FORWARD -d 192.168.32.100 -p tcp --dport 80 -j ACCEPT
+iptables -A FORWARD -d 192.168.32.100 -p tcp --dport 443 -j ACCEPT 
+iptables -A FORWARD -d 192.168.32.100 -p tcp --dport 22 -j ACCEPT  
+
+De esta forma se han permitido las conexiones HTTP, HTTPS y SSH. Posteriormente, se ha creado una ruta estática nueva en
+la máquina "Debian2" por medio del comando:
+
+up route add -net 192.168.0.0/24 gw 192.168.32.1 dev enp0s3". 
+
+
+
+8. Configuración de la red Only-Host-Network.
+
+En este punto se procede a explicar como se ha llevado a cabo la configuración del localhost con las máquinas virtuales.
+Previamente se ha creado una subred de tipo Only-Host-Network, con dirección 192.168.0.0/24 y máscara 255.255.255.0.
+Ádemas, en "Debian1" se ha creado un adaptador de tipo "conexión anfitrión" y posteriormente en el fichero de configuración
+de "Debian1" llamado "/etc/network/interfaces" se ha añadido una nueva interfaz estática con dirección IP 192.168.0.101. 
+El computador localhost ha sido configurado con la dirección IP fija 192.168.0.1. Adicionalmente para poder lograr que el
+localhost se conecte con el resto de máquinas de la red se le ha añadido una ruta estática por defecto que tiene como
+puerta de enlace la dirección IP de "Debian1" en la Only-Host-Network, concretamente 192.168.0.101, y en las máquinas
+virtuales "Debian2" y "Debian6" se han añadido dos nuevas rutas con los siguentes comandos respectivamente:
+
+up route add -net 192.168.0.0/24 gw 192.168.32.1 dev enp0s3
+up route add -bet 192.168.0.0/24 gw 192.168.56.1 dev enp0s3
+
+Finalmente se han realizado pings de todas las máquinas con localhost y viceversa para verificar que todas ellas se comunican
+adecuadamente. Adicionalmente se ha comprobado que el servidor apache montado en "Debian2" en los apartados anteriores van 
+bien. Para ello, se ha escrito la IP de "Debian2" 192.168.32.100 en el navegador del localhost y la prueba ha sido un éxito.
+
+
+
+9. Configuración del servidor SSH
+
+Para llevar a cabo la instalación del servidor SSH en "Debian5" se procedio de la siguiente forma. En primer lugar se ha
+descargado el paquete openssh-server con el comando "apt install openssh-server". Posteriormente se ha procedido a impedir
+el acceso del usuario root modificando el fichero "/etc/ssh/sshd_confing de "Debian5" poniendo en "PermitRootLogin" no.
+A continuación se ha reiniciado el servidor ssh con el comando /etc/init.d/restart para actualizar los cambios. Así se ha
+intentado entrar con ssh vía con usuario root y no se ha podido, por lo que los cambios se han actualizado correctamente.
+
+En añadido, se han introducido en "Debian1" las reglas correspondientes en iptables para permitir la conexión tanto al 
+servidor SSH de "Debian5" recién instalado como al servidor de apache de "Debian2" a través de la dirección IP de la 
+máquina virtual "Debian1" en la red Only-Host-Network. Para ello se han empleado los sigueintes comandos:
+
+iptables -t nat -A PREROUTING -d 192.168.0.101 -i enp0s10 -p tcp -m tcp --dport 80 -j DNAT --to-destination 192.168.32.100:80
+iptables -t nat -A PREROUTING -d 192.168.0.101 -i enp0s10 -p tcp -m tcp --dport 443 -j DNAT --to-destination 192.168.32.100:443
+iptables -t nat -A PREROUTING -d 192.168.0.101 -i enp0s10 -p tcp -m tcp --dport 22 -j DNAT --to-destination 192.168.64.103:22
+iptables -t nat -A POSROUTING -j MASQUERADE
+
+Así las cosas, se o permte desde "Debian1" el tráfico HTTP, HTTPS Y SSH, y la última regla permite enrutar el tráfico sin
+alterar el tráfico original. 
+
+
+10. Firewall
+
+Para poder permitir el tráfico intranet, el tráfico al servidor apache de "Debian2" y al servidor SSH de "Debian5" se han 
+apicado las siguientes reglas:
+
+iptables -A INPUT -i enp0s3 -p tcp --dport 80 -j ACCEPT
+iptables -A INPUT -i enp0s3 -p tcp --dport 443 -j ACCEPT
+iptables -A INPUT -i enp0s3 -p tcp --dport 22 -j ACCEPT
+iptables -A INPUT -i enp0s3 -j DROP
+
+De esta forma se logra permitir el tráfico HTTP, HTTPS y SSH desde internet, y denegar el resto de tráfico que no sea el ya
+permitido.
+
+iptables -A INPUT -i enp0s10 -p tcp --dport 80 -j ACCEPT
+iptables -A INPUT -i enp0s10 -p tcp --dport 443 -j ACCEPT
+iptables -A INPUT -i enp0s10 -p tcp --dport 22 -j ACCEPT
+
+Así se consigue permitir el tráfico HTTP, HTTPS y SSh desde el localHost.
+
+Posteriormente se ha probado la accesibilidad desde cualquier máquina, incluída el localhost, al servidor SSH instalado en la
+máquina "Debian5", así como el acceso al servidor de apache de "Debian2" a través de la IP de "Debian1" y todas las pruebas
+han proporcionado resultados correctos.
+
+Para finalizar se ha añadido una regla adicional en el firewall para que las máquinas virtuales hagan ping a localhost, pero
+localhost no pueda hacer ping a las máquinas virtuales. Para ello, se ha usado el comando siguiente:
+
+iptables -A INPUT -i enp0s10 -p icmp --icmp-type echo-request -j DROP
+iptables -A FORWARD -i enp0s10 -p icmp --icmp-type echo-request -j DROP
+
+Así, se logra evitar que la máquina host haga ping tanto al propio "Debian1" como al resto de máquinas de la red.
+
+
+
+
+
+
+
+
+
+
+ 
+
+  
+
+
+
+ 
+
+   
+
+
+
+
+ 
