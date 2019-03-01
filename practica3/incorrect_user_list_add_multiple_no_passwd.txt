@@ -1,0 +1,3 @@
+user0,pwd0,Betty Holberton
+user1,
+user2,pwd2,Kathleen Antonelli
